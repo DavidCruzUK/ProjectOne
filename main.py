@@ -1,16 +1,48 @@
-# This is a sample Python script.
+import requests
+from bs4 import BeautifulSoup
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+for x in range(1, 51):
+    url = "http://books.toscrape.com/catalogue/category/books_1/page-" + str(x) + ".html"
+    page = requests.get(url)
 
+    # Check if the page do not exist or has an error
+    if page.status_code != 200:
+        continue
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+    soup = BeautifulSoup(page.content, 'html.parser')
 
+    # get a href: row.find(class_="image_container").find('a')['href'] == book url
+    # get img src: row.find(class_="image_container").find('img')['src'] == book image
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+    product_page_url = ""
+    universal_product_code = ""
+    title = ""
+    price_including_tax = ""
+    price_excluding_tax = ""
+    number_available = ""
+    product_description = ""
+    category = ""
+    review_rating = ""
+    image_url = ""
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    list_of_books = soup.find_all(class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
+
+    for book in list_of_books:
+        # product_page_url = book.find(class_="image_container").find('a').get('href')
+        # print("product_page_url: " + product_page_url)
+
+        url_book = book.find(class_="image_container").find('a')['href'].replace("../../", '')
+        product_page_url = "http://books.toscrape.com/catalogue/" + url_book
+        product_page_request = requests.get(product_page_url)
+        current_book_soup = BeautifulSoup(product_page_request.content, 'html.parser')
+
+        # Check if the title do not exist or has an error
+        if page.status_code != 200:
+            continue
+
+        title = current_book_soup.find(class_="col-sm-6 product_main").find('h1').get_text()
+
+        print("title: " + title)
+
+        # image_url = book.find(class_="image_container").find('img')['src']
+        # print("image_url: " + image_url)
