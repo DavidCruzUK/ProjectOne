@@ -32,14 +32,19 @@ def extract_number_of_pages() -> int:
         return 0
 
 
+total_number_of_pages = extract_number_of_pages()
+
 # extract the required information into an all_books_data array:
-for x in range(extract_number_of_pages()):
+for x in range(total_number_of_pages):
     url = "http://books.toscrape.com/catalogue/category/books_1/page-" + str(x) + ".html"
     page = requests.get(url)
 
     # Check if the page do not exist or has an error
     if page.status_code != 200:
         continue
+
+    # Prints: Currently retrieving page 1 of 50
+    print("Currently retrieving page " + str(x) + " of " + str(total_number_of_pages - 1))
 
     soup = BeautifulSoup(page.content, 'html.parser')
 
@@ -147,3 +152,5 @@ with open(scraped_file, "w", newline="") as csvfile:
     writer.writerow(headers)
     for row in all_books_data:
         writer.writerow(row)
+
+    print("... DONE ...")
