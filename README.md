@@ -7,7 +7,7 @@
 #### Install dependencies:
 This project includes requirements.txt file to install all dependencies you need
 you can run: 
-`pip install -r requirements.txt`
+* `pip install -r requirements.txt`
 
 
 
