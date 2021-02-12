@@ -1,7 +1,32 @@
 import requests
 from bs4 import BeautifulSoup, NavigableString
 
-for x in range(1, 51):
+
+def extract_number_of_pages() -> int:
+    u = "http://books.toscrape.com/index.html"
+    home = requests.get(u)
+    # Check if the page do not exist or has an error
+    if home.status_code != 200:
+        return 0
+
+    home_soup = BeautifulSoup(home.content, 'html.parser')
+
+    current = home_soup.find('li', class_='current').get_text().split()
+
+    # remove from the array are not a number
+    for c in current:
+        if not c.isdigit():
+            current.remove(c)
+
+    # return the latest number in the array:
+    # e.g.: in (1 of 50) will return 51 to get get range of 0 to 50
+    if len(current) > 0:
+        return int(current[len(current) - 1]) + 1
+    else:
+        return 0
+
+
+for x in range(extract_number_of_pages()):
     url = "http://books.toscrape.com/catalogue/category/books_1/page-" + str(x) + ".html"
     page = requests.get(url)
 
@@ -23,7 +48,7 @@ for x in range(1, 51):
     product_description = ""  # done
     category = ""  # done
     review_rating = ""  # done
-    image_url = ""
+    image_url = ""  # done
 
     list_of_books = soup.find_all(class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
 
@@ -42,8 +67,18 @@ for x in range(1, 51):
         if page.status_code != 200:
             continue
 
-        product_description = current_book_soup.find('p', class_=False).get_text()
+        try:
+            product_description = current_book_soup.find('p', class_=False).get_text()
+        except:
+            product_description = ""
+
         print("product_description:" + product_description)
+
+        title = current_book_soup.find(class_="col-sm-6 product_main").find('h1').get_text()
+        print("title: " + title)
+
+        image_url = base_url + current_book_soup.find('img')['src'].replace("../../", '')
+        print("image_url: " + image_url)
 
         tables = current_book_soup.find('table', class_="table table-striped")
 
@@ -85,9 +120,3 @@ for x in range(1, 51):
             if th == "Number of reviews":
                 review_rating = td
                 print("review_rating: " + review_rating)
-
-        title = current_book_soup.find(class_="col-sm-6 product_main").find('h1').get_text()
-        print("title: " + title)
-
-        image_url = base_url + current_book_soup.find('img')['src'].replace("../../", '')
-        print("image_url: " + image_url)
