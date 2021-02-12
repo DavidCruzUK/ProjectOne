@@ -1,10 +1,16 @@
+import csv
 import requests
 from bs4 import BeautifulSoup, NavigableString
 
+# in this array we will save the data once is extracted
+# to be included in the CSV file
+all_books_data = []
 
+
+# this method will extract the total number of pages from index.html
 def extract_number_of_pages() -> int:
-    u = "http://books.toscrape.com/index.html"
-    home = requests.get(u)
+    index_url = "http://books.toscrape.com/index.html"
+    home = requests.get(index_url)
     # Check if the page do not exist or has an error
     if home.status_code != 200:
         return 0
@@ -26,6 +32,7 @@ def extract_number_of_pages() -> int:
         return 0
 
 
+# extract the required information into an all_books_data array:
 for x in range(extract_number_of_pages()):
     url = "http://books.toscrape.com/catalogue/category/books_1/page-" + str(x) + ".html"
     page = requests.get(url)
@@ -36,30 +43,25 @@ for x in range(extract_number_of_pages()):
 
     soup = BeautifulSoup(page.content, 'html.parser')
 
-    # get a href: row.find(class_="image_container").find('a')['href'] == book url
-    # get img src: row.find(class_="image_container").find('img')['src'] == book image
-
-    product_page_url = ""  # done
-    universal_product_code = ""  # done
-    title = ""  # done
-    price_including_tax = ""  # done
-    price_excluding_tax = ""  # done
-    number_available = ""  # done
-    product_description = ""  # done
-    category = ""  # done
-    review_rating = ""  # done
-    image_url = ""  # done
+    product_page_url = ""
+    universal_product_code = ""
+    title = ""
+    price_including_tax = ""
+    price_excluding_tax = ""
+    number_available = ""
+    product_description = ""
+    category = ""
+    review_rating = ""
+    image_url = ""
 
     list_of_books = soup.find_all(class_="col-xs-6 col-sm-4 col-md-3 col-lg-3")
 
     for book in list_of_books:
-        # product_page_url = book.find(class_="image_container").find('a').get('href')
-        # print("product_page_url: " + product_page_url)
 
         url_book = book.find(class_="image_container").find('a')['href'].replace("../../", '')
         base_url = "http://books.toscrape.com/"
         product_page_url = base_url + "catalogue/" + url_book
-        print("product_page_url: " + product_page_url)
+        # print("product_page_url: " + product_page_url)
         product_page_request = requests.get(product_page_url)
         current_book_soup = BeautifulSoup(product_page_request.content, 'html.parser')
 
@@ -72,13 +74,9 @@ for x in range(extract_number_of_pages()):
         except:
             product_description = ""
 
-        print("product_description:" + product_description)
-
         title = current_book_soup.find(class_="col-sm-6 product_main").find('h1').get_text()
-        print("title: " + title)
 
         image_url = base_url + current_book_soup.find('img')['src'].replace("../../", '')
-        print("image_url: " + image_url)
 
         tables = current_book_soup.find('table', class_="table table-striped")
 
@@ -91,15 +89,12 @@ for x in range(extract_number_of_pages()):
             td = str(table.find('td').get_text())
             if th == "UPC":
                 universal_product_code = td
-                print("universal_product_code: " + universal_product_code)
 
             if th == "Price (incl. tax)":
                 price_including_tax = td
-                print("price_including_tax: " + price_including_tax)
 
             if th == "Price (excl. tax)":
                 price_excluding_tax = td
-                print("price_excluding_tax: " + price_excluding_tax)
 
             if th == "Availability":
                 def extract_stock(numbers: str) -> str:
@@ -111,12 +106,44 @@ for x in range(extract_number_of_pages()):
 
 
                 number_available = extract_stock(td)
-                print("number_available: " + number_available)
 
             if th == "Product Type":
                 category = td
-                print("category: " + category)
 
             if th == "Number of reviews":
                 review_rating = td
-                print("review_rating: " + review_rating)
+
+        all_books_data.append([
+            product_page_url,
+            universal_product_code,
+            title,
+            price_including_tax,
+            price_excluding_tax,
+            number_available,
+            product_description,
+            category,
+            review_rating,
+            image_url,
+        ])
+        print("Book: " + title + ", has been added")
+
+# create CSV file:
+scraped_file = "book_scraped.csv"
+
+headers = [
+    "product_page_url",
+    "universal_product_code",
+    "title",
+    "price_including_tax",
+    "price_excluding_tax",
+    "number_available",
+    "product_description",
+    "category",
+    "review_rating",
+    "image_url",
+]
+with open(scraped_file, "w", newline="") as csvfile:
+    writer = csv.writer(csvfile, delimiter=',')
+    writer.writerow(headers)
+    for row in all_books_data:
+        writer.writerow(row)
